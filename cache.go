@@ -3,7 +3,6 @@ package gcache
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 )
 
@@ -58,7 +57,6 @@ type baseCache struct {
 	deserializeFunc  DeserializeFunc
 	serializeFunc    SerializeFunc
 	expiration       *time.Duration
-	mu               sync.RWMutex
 	loadGroup        Group
 	*stats
 }

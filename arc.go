@@ -59,16 +59,12 @@ func (c *ARC) replace(key interface{}) {
 }
 
 func (c *ARC) Set(key, value interface{}) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	_, err := c.set(key, value)
 	return err
 }
 
 // Set a new key-value pair with an expiration time
 func (c *ARC) SetWithExpire(key, value interface{}, expiration time.Duration) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	item, err := c.set(key, value)
 	if err != nil {
 		return err
@@ -194,8 +190,6 @@ func (c *ARC) get(key interface{}, onLoad bool) (interface{}, error) {
 }
 
 func (c *ARC) getValue(key interface{}, onLoad bool) (interface{}, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	if elt := c.t1.Lookup(key); elt != nil {
 		c.t1.Remove(key, elt)
 		item := c.items[key]
@@ -245,8 +239,6 @@ func (c *ARC) getWithLoader(key interface{}, isWait bool) (interface{}, error) {
 		if e != nil {
 			return nil, e
 		}
-		c.mu.Lock()
-		defer c.mu.Unlock()
 		item, err := c.set(key, v)
 		if err != nil {
 			return nil, err
@@ -265,8 +257,6 @@ func (c *ARC) getWithLoader(key interface{}, isWait bool) (interface{}, error) {
 
 // Has checks if key exists in cache
 func (c *ARC) Has(key interface{}) bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	now := time.Now()
 	return c.has(key, &now)
 }
@@ -281,8 +271,6 @@ func (c *ARC) has(key interface{}, now *time.Time) bool {
 
 // Remove removes the provided key from the cache.
 func (c *ARC) Remove(key interface{}) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	return c.remove(key)
 }
@@ -315,8 +303,6 @@ func (c *ARC) remove(key interface{}) bool {
 
 // GetALL returns all key-value pairs in the cache.
 func (c *ARC) GetALL(checkExpired bool) map[interface{}]interface{} {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	items := make(map[interface{}]interface{}, len(c.items))
 	now := time.Now()
 	for k, item := range c.items {
@@ -329,8 +315,6 @@ func (c *ARC) GetALL(checkExpired bool) map[interface{}]interface{} {
 
 // Keys returns a slice of the keys in the cache.
 func (c *ARC) Keys(checkExpired bool) []interface{} {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	keys := make([]interface{}, 0, len(c.items))
 	now := time.Now()
 	for k := range c.items {
@@ -343,8 +327,6 @@ func (c *ARC) Keys(checkExpired bool) []interface{} {
 
 // Len returns the number of items in the cache.
 func (c *ARC) Len(checkExpired bool) int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	if !checkExpired {
 		return len(c.items)
 	}
@@ -360,9 +342,6 @@ func (c *ARC) Len(checkExpired bool) int {
 
 // Purge is used to completely clear the cache
 func (c *ARC) Purge() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if c.purgeVisitorFunc != nil {
 		for _, item := range c.items {
 			c.purgeVisitorFunc(item.key, item.value)
